@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>고양이 버튼 게임</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 26px;
+      font-weight: bold;
+      z-index: 10;
+    }
+    #gameArea {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    .button {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+    }
+    #redButton {
+      width: 80px;
+      height: 80px;
+      background-image: url('cat.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .yellowButton {
+      background-color: yellow;
+      width: 50px;
+      height: 50px;
+      color: black;
+    }
+    .grayButton {
+      background-color: gray;
+      width: 50px;
+      height: 50px;
+      color: white;
+    }
+    #gameOver {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 40px;
+      font-weight: bold;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">현재 점수: 0점</div>
+  <div id="gameArea">
+    <div id="redButton" class="button"></div>
+    <div id="gameOver">게임 오버!</div>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const redButton = document.getElementById("redButton");
+    const scoreDisplay = document.getElementById("score");
+    const gameOverDisplay = document.getElementById("gameOver");
+
+    let score = 0;
+    const redSize = 80;
+    let redX = window.innerWidth / 2 - redSize / 2;
+    let redY = window.innerHeight - redSize - 20;
+
+    const yellowSpeed = 2.6;
+    const graySpeed = 1.5;
+    let yellowCount = 0;
+
+    function createFallingButton(color) {
+      const btn = document.createElement("div");
+      btn.classList.add("button");
+      btn.classList.add(color === "yellow" ? "yellowButton" : "grayButton");
+      if (color === "yellow") btn.textContent = "일류경제";
+      btn.style.left = Math.random() * (window.innerWidth - 50) + "px";
+      btn.style.top = "0px";
+      gameArea.appendChild(btn);
+      return btn;
+    }
+
+    let fallingButtons = [];
+
+    function updateButtons() {
+      fallingButtons.forEach((btn, index) => {
+        const speed = btn.classList.contains("yellowButton") ? yellowSpeed : graySpeed;
+        const size = 50;
+        let y = parseFloat(btn.style.top);
+        y += speed;
+        btn.style.top = y + "px";
+
+        const btnX = parseFloat(btn.style.left);
+        const btnY = y;
+        if (
+          btnY + size >= redY &&
+          btnY <= redY + redSize &&
+          btnX + size >= redX &&
+          btnX <= redX + redSize
+        ) {
+          if (btn.classList.contains("yellowButton")) {
+            score++;
+          } else {
+            score--;
+          }
+          scoreDisplay.innerText = `현재 점수: ${score}점`;
+          gameArea.removeChild(btn);
+          fallingButtons.splice(index, 1);
+          if (score < 0) {
+            gameOverDisplay.style.display = "block";
+            cancelAnimationFrame(animationId);
+          }
+        } else if (y > window.innerHeight) {
+          gameArea.removeChild(btn);
+          fallingButtons.splice(index, 1);
+        }
+      });
+    }
+
+    function spawnLoop() {
+      yellowCount++;
+      fallingButtons.push(createFallingButton("yellow"));
+      if (yellowCount % 4 === 0) {
+        fallingButtons.push(createFallingButton("gray"));
+      }
+      setTimeout(spawnLoop, 1000);
+    }
+
+    let animationId;
+    function draw() {
+      updateButtons();
+      redButton.style.left = redX + "px";
+      redButton.style.top = redY + "px";
+      animationId = requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") {
+        redX = Math.max(0, redX - 20);
+      } else if (e.key === "ArrowRight") {
+        redX = Math.min(window.innerWidth - redSize, redX + 20);
+      }
+    });
+
+    redButton.style.left = redX + "px";
+    redButton.style.top = redY + "px";
+    draw();
+    spawnLoop();
+  </script>
+</body>
+</html>
