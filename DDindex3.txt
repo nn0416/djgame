@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>고양이 버튼 게임</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 29.9px;
+      font-weight: bold;
+      z-index: 10;
+      color: black;
+      transition: color 0.3s;
+    }
+
+    #gameOver {
+      display: none;
+    }
+
+    #noFunCity {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: darkred;
+      z-index: 25;
+      display: none;
+      animation: fallFade 2s forwards;
+    }
+
+    @keyframes fallFade {
+      0% { top: 10%; opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    #gameArea {
+      position: relative;
+      width: 43.2vw; /* 기존 21.6vw의 2배 */
+      height: 100vh;
+      margin: 0 auto;
+    }
+
+    .button {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #redButton {
+      width: 88px;
+      height: 88px;
+      background-image: url('cat.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .yellowButton {
+      background-color: yellow;
+      width: 66px;
+      height: 66px;
+    }
+
+    .grayButton {
+      background-color: gray;
+      width: 84px;
+      height: 84px;
+    }
+
+    #cityText {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: gray;
+      font-size: 36px;
+      opacity: 0.4;
+      z-index: 5;
+    }
+
+    #authorText {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 12px;
+      color: gray;
+      opacity: 0.4;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">현재 점수: 0점</div>
+  <div id="gameOver">게임 오버</div>
+  <div id="noFunCity">노잼 도시</div>
+  <div id="gameArea">
+    <div id="cityText">일류경제도시 냥냥</div>
+    <div id="authorText">BY. NN0416</div>
+    <div id="redButton" class="button"></div>
+  </div>
+
+  <audio id="meowSound" src="meow.mp3" preload="auto"></audio>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const redButton = document.getElementById("redButton");
+    const scoreDisplay = document.getElementById("score");
+    const gameOverDisplay = document.getElementById("gameOver");
+    const noFunCity = document.getElementById("noFunCity");
+    const meowSound = document.getElementById("meowSound");
+
+    let score = 0;
+    const redSize = 88;
+    let redX = gameArea.clientWidth / 2 - redSize / 2;
+    let redY = window.innerHeight - redSize - 20;
+
+    const yellowSpeed = 2.0;
+    const graySpeed = yellowSpeed * 1.3;
+
+    const grayTexts = ["족저근막염", "막걸리", "아주잘못된질문", "스토커"];
+
+    let dropCount = 0;
+    let audioAllowed = false;
+
+    function createYellowButton() {
+      const yellow = document.createElement("div");
+      yellow.className = "button yellowButton";
+      yellow.innerText = "일류경제";
+      gameArea.appendChild(yellow);
+
+      let x = Math.random() * (gameArea.clientWidth - 66);
+      let yPos = 0;
+
+      function fall() {
+        if (score < 0) return;
+        yPos += yellowSpeed;
+        yellow.style.left = x + "px";
+        yellow.style.top = yPos + "px";
+
+        if (
+          yPos + 66 >= redY &&
+          yPos <= redY + redSize &&
+          x + 66 >= redX &&
+          x <= redX + redSize
+        ) {
+          score++;
+          scoreDisplay.innerText = `현재 점수: ${score}점`;
+
+          document.body.style.backgroundColor = "#d0eaff";
+          scoreDisplay.style.color = "orange";
+          setTimeout(() => {
+            document.body.style.backgroundColor = "#f0f0f0";
+            scoreDisplay.style.color = "black";
+          }, 1000);
+
+          if (audioAllowed) {
+            meowSound.currentTime = 0;
+            meowSound.play().catch(() => {});
+          }
+
+          yellow.remove();
+          return;
+        }
+
+        if (yPos > window.innerHeight) {
+          yellow.remove();
+          return;
+        }
+
+        requestAnimationFrame(fall);
+      }
+
+      fall();
+    }
+
+    function createGrayButton() {
+      const gray = document.createElement("div");
+      gray.className = "button grayButton";
+      gray.innerText = grayTexts[Math.floor(Math.random() * grayTexts.length)];
+      gameArea.appendChild(gray);
+
+      let x = Math.random() * (gameArea.clientWidth - 84);
+      let yPos = 0;
+
+      function fall() {
+        if (score < 0) return;
+
+        yPos += graySpeed;
+        gray.style.left = x + "px";
+        gray.style.top = yPos + "px";
+
+        if (
+          yPos + 84 >= redY &&
+          yPos <= redY + redSize &&
+          x + 84 >= redX &&
+          x <= redX + redSize
+        ) {
+          score--;
+          scoreDisplay.innerText = `현재 점수: ${score}점`;
+          gray.remove();
+
+          if (score <= 0) {
+            gameOverDisplay.style.display = "none";
+            noFunCity.style.display = "block";
+          }
+          return;
+        }
+
+        if (yPos > window.innerHeight) {
+          gray.remove();
+          return;
+        }
+
+        requestAnimationFrame(fall);
+      }
+
+      fall();
+    }
+
+    function dropLoop() {
+      if (score <= 0) return;
+
+      dropCount++;
+
+      // 1 : 4 비율 유지
+      if (dropCount % 5 === 0) {
+        createYellowButton();
+      }
+
+      createGrayButton();
+
+      setTimeout(dropLoop, 1000);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (score <= 0) return;
+      if (e.key === "ArrowLeft") {
+        redX = Math.max(0, redX - 20);
+      } else if (e.key === "ArrowRight") {
+        redX = Math.min(gameArea.clientWidth - redSize, redX + 20);
+      }
+      redButton.style.left = redX + "px";
+    });
+
+    redButton.style.left = redX + "px";
+    redButton.style.top = redY + "px";
+
+    document.body.addEventListener("click", () => {
+      audioAllowed = true;
+      dropLoop();
+    }, { once: true });
+  </script>
+</body>
+</html>
